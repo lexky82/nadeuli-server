@@ -7,6 +7,7 @@ class User extends Model {
   public nickName!: string;
   public email!: string;
   public password!: string;
+  public isVerified!: boolean;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -35,6 +36,10 @@ User.init(
     password: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    isVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
   },
   {
