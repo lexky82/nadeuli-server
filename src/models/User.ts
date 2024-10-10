@@ -3,11 +3,9 @@ import sequelize from "../lib/sequelize";
 
 class User extends Model {
   public id!: number;
-  public phone!: string;
   public nickName!: string;
   public email!: string;
   public password!: string;
-  public isVerified!: boolean;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -19,10 +17,6 @@ User.init(
       type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
       primaryKey: true,
-    },
-    phone: {
-      type: DataTypes.STRING,
-      allowNull: false,
     },
     nickName: {
       type: DataTypes.STRING,
@@ -36,10 +30,6 @@ User.init(
     password: {
       type: DataTypes.STRING,
       allowNull: false,
-    },
-    isVerified: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
     },
   },
   {
