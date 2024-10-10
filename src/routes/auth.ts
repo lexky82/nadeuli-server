@@ -1,5 +1,9 @@
 import { Router } from "express";
 import {
+  isValidEmail,
+  login,
+  logout,
+  refreshAccessToken,
   register,
   sendEmailVerification,
   verifyEmail,
@@ -7,14 +11,16 @@ import {
 
 const router = Router();
 
-router.get("/", (req, res) => {
-  res.send("hello world");
-});
-
 router.post("/register", register);
+router.post("/login", login);
+router.post("/logout", logout);
+
+//토큰 관련
+router.post("/refresh", refreshAccessToken);
 
 // 이메일 인증 관련
 router.post("/send-email-verification", sendEmailVerification);
 router.get("/verify-email", verifyEmail);
+router.get("/is-validEmail", isValidEmail);
 
 export default router;
