@@ -64,13 +64,6 @@ export const login = async (req: Request, res: Response) => {
       { expiresIn: "7d" }
     );
 
-    res.cookie("accessToken", accessToken, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 3600000,
-      sameSite: "strict",
-    });
-
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: true,
@@ -79,7 +72,8 @@ export const login = async (req: Request, res: Response) => {
     });
 
     res.status(200).json({
-      ...{ ...user, accessToken, refreshToken },
+      ...user.dataValues,
+      accessToken,
     });
   } catch (error) {
     res.status(500).json({ message: "로그인 실패" });
@@ -100,20 +94,13 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
       email: string;
     };
 
-    const newAccessToken = sign(
+    const accessToken = sign(
       { id: decoded.id, email: decoded.email },
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );
 
-    res.cookie("accessToken", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 3600000, // 1시간
-      sameSite: "strict",
-    });
-
-    res.status(200).json({ message: "액세스 토큰 갱신 성공" });
+    res.status(200).json({ accessToken });
   } catch (error) {
     res
       .status(403)
