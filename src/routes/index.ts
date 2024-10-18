@@ -7,6 +7,6 @@ router.get("/", (req, res) => {
   res.send("hello world");
 });
 
-router.use("/auth", authRoutes);
+router.use("/authentication", authRoutes);
 
 export default router;
