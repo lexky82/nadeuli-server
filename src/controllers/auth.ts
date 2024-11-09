@@ -1,7 +1,7 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User from "../models/User";
-import { JwtPayload, VerifyErrors, sign, verify } from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import path from "path";
@@ -10,7 +10,7 @@ import fs from "fs/promises";
 dotenv.config();
 
 export const register = async (req: Request, res: Response) => {
-  const { email, nickName, password } = req.body;
+  const { email, name, password } = req.body;
 
   try {
     if (!req.session.verifiedEmail) {
@@ -22,10 +22,10 @@ export const register = async (req: Request, res: Response) => {
 
     const newUser = await User.create({
       email,
-      nickName,
+      name,
       password: hashedPassword,
     });
-
+    req.session.verifiedEmail = undefined;
     res
       .status(201)
       .json({ message: "회원가입을 성공하였습니다.", user: newUser });
@@ -66,14 +66,15 @@ export const login = async (req: Request, res: Response) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
+      secure: false,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7일
-      sameSite: "strict",
+      sameSite: "lax",
     });
 
     res.status(200).json({
       ...user.dataValues,
       accessToken,
+      refreshToken,
     });
   } catch (error) {
     res.status(500).json({ message: "로그인 실패" });
@@ -128,7 +129,7 @@ export const sendEmailVerification = async (req: Request, res: Response) => {
     expiresIn: "1h",
   });
 
-  const verificationUrl = `${process.env.CLIENT_URL}/api/auth/verify-email?token=${token}`;
+  const verificationUrl = `${process.env.CLIENT_URL}/api/authentication/verify-email?token=${token}`;
 
   const templatePath = path.join(
     __dirname,
@@ -217,5 +218,94 @@ export const isValidEmail = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(401).json({ message: error, email });
+  }
+};
+
+export const checkUserByEmail = async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ message: "이메일이 없습니다." });
+      return;
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (user) {
+      const token = sign({ email }, process.env.JWT_SECRET as string, {
+        expiresIn: "1h",
+      });
+
+      const verificationUrl = `${process.env.CLIENT_URL}/api/authentication/verify-email?token=${token}`;
+
+      const templatePath = path.join(
+        __dirname,
+        "../lib/verificationMailTemplate.html"
+      );
+
+      const html = await fs.readFile(templatePath, "utf8");
+
+      const emailHtml = html.replace("{{verificationUrl}}", verificationUrl);
+
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT as string, 10),
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: '"나들이" <your-email@gmail.com>',
+        to: email,
+        subject: "나들이 이메일 인증",
+        html: emailHtml,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        res.status(200).json({ message: "Verification email sent" });
+      } catch (error) {
+        console.error("Error sending email:", error);
+        res.status(500).json({ error: "Error sending verification email" });
+      }
+
+      res.status(200);
+    } else {
+      res.status(404).json({ message: "존재하지 않는 사용자입니다." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "존재하지 않는 이메일입니다.", error });
+  }
+};
+
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      res.status(400).json({ message: "Email and new password are required" });
+      return;
+    }
+
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      res.status(404).json({ message: "User not found" });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashedPassword;
+    await user.save();
+    req.session.verifiedEmail = undefined;
+
+    res.status(200).json({ message: "Password updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error updating password", error });
   }
 };
