@@ -1,5 +1,8 @@
 import { Router } from "express";
 import {
+  changePassword,
+  checkCookie,
+  checkUserByEmail,
   isValidEmail,
   login,
   logout,
@@ -22,5 +25,8 @@ router.post("/refresh", refreshAccessToken);
 router.post("/send-email-verification", sendEmailVerification);
 router.get("/verify-email", verifyEmail);
 router.get("/is-validEmail", isValidEmail);
+
+router.post("/check-user", checkUserByEmail);
+router.patch("/change-password", changePassword);
 
 export default router;
