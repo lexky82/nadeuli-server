@@ -5,6 +5,10 @@
     "start": "node dist/server.js"
   },
   "dependencies": {
+<<<<<<< HEAD
+=======
+    "@types/multer": "^1.4.12",
+>>>>>>> 8df4898f9b9f01828d80a7d8de161792321a26b9
     "axios": "^1.7.7",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
