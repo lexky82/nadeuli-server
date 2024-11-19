@@ -1,7 +1,6 @@
 import { Router } from "express";
 import {
   changePassword,
-  checkCookie,
   checkUserByEmail,
   isValidEmail,
   login,

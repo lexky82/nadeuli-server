@@ -6,8 +6,22 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs/promises";
+import axios from "axios";
 
 dotenv.config();
+
+const fetchProfile = async (name: string) => {
+  try {
+    const response = await axios.get(
+      `https://api.dicebear.com/9.x/glass/jpeg?seed=${name}&radius=50`
+    );
+    const profileData = response.data;
+
+    return profileData;
+  } catch (error) {
+    throw new Error(error as string);
+  }
+};
 
 export const register = async (req: Request, res: Response) => {
   const { email, name, password } = req.body;
@@ -25,7 +39,22 @@ export const register = async (req: Request, res: Response) => {
       name,
       password: hashedPassword,
     });
+
     req.session.verifiedEmail = undefined;
+
+    const dirPath = path.join("public", "uploads", "users", email);
+    const filePath = path.join(dirPath, "profile.jpeg");
+
+    fs.mkdir(dirPath, { recursive: true })
+      .then(async () => {
+        fs.writeFile(filePath, await fetchProfile(name)).catch((err) => {
+          throw new Error(err);
+        });
+      })
+      .catch((err) => {
+        throw new Error(err);
+      });
+
     res
       .status(201)
       .json({ message: "회원가입을 성공하였습니다.", user: newUser });
@@ -45,7 +74,10 @@ export const login = async (req: Request, res: Response) => {
       return;
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(
+      password,
+      user?.dataValues.password as string
+    );
 
     if (!isMatch) {
       res.status(400).json({ message: "잘못된 비밀번호입니다." });
@@ -53,13 +85,13 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const accessToken = sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user?.dataValues.email },
       process.env.JWT_SECRET as string,
       { expiresIn: "1h" }
     );
 
     const refreshToken = sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user?.dataValues.email },
       process.env.JWT_SECRET as string,
       { expiresIn: "7d" }
     );
@@ -77,7 +109,7 @@ export const login = async (req: Request, res: Response) => {
       refreshToken,
     });
   } catch (error) {
-    res.status(500).json({ message: "로그인 실패" });
+    res.status(500).json({ message: "로그인 실패", error });
   }
 };
 
