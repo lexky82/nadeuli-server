@@ -1,9 +1,8 @@
-import { DataTypes, Model } from "sequelize";
+import { DataTypes, INTEGER, Model } from "sequelize";
 import sequelize from "../lib/sequelize";
 
 class Ruins extends Model {
   public ID!: number;
-  public MLSFC_NM!: string;
   public POI_ID!: number;
   public POI_NM!: string;
   public CL_CD!: number;
@@ -17,6 +16,10 @@ class Ruins extends Model {
   public BULD_NO!: string;
   public LC_LA!: number;
   public LC_LO!: number;
+  public Summary!: Text;
+  public Contents!: Text;
+  public ThumbsUp!: Text;
+  public View!: Text;
 }
 
 Ruins.init(
@@ -25,10 +28,6 @@ Ruins.init(
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
-    },
-    MLSFC_NM: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
     },
     POI_ID: {
       type: DataTypes.INTEGER,
@@ -81,6 +80,22 @@ Ruins.init(
     LC_LO: {
       type: DataTypes.DECIMAL(10, 7),
       allowNull: false,
+    },
+    Summary: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    Contents: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    ThumbsUp: {
+      type: INTEGER,
+      defaultValue: 0,
+    },
+    View: {
+      type: INTEGER,
+      defaultValue: 0,
     },
   },
   {
